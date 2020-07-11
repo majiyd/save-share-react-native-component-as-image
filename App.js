@@ -15,6 +15,7 @@ import {
 
 import {captureRef} from 'react-native-view-shot';
 import CameraRoll from '@react-native-community/cameraroll';
+import Share from 'react-native-share';
 
 const App = () => {
   // create a ref
@@ -78,6 +79,20 @@ const App = () => {
     }
   };
 
+  const shareImage = async () => {
+    try {
+      const uri = await captureRef(viewRef, {
+        format: 'png',
+        quality: 0.8,
+      });
+      console.log('uri', uri);
+      const shareResponse = await Share.open({url: uri});
+      console.log('shareResponse', shareResponse);
+    } catch (error) {
+      console.log('error', error);
+    }
+  };
+
   return (
     <>
       <StatusBar barStyle="dark-content" />
@@ -99,7 +114,7 @@ const App = () => {
             </View>
 
             <View style={styles.row}>
-              <TouchableOpacity style={styles.button}>
+              <TouchableOpacity style={styles.button} onPress={shareImage}>
                 <Text>Share</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.button} onPress={downloadImage}>
