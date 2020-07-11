@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useRef} from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -8,9 +8,76 @@ import {
   StatusBar,
   Image,
   TouchableOpacity,
+  PermissionsAndroid,
+  Alert,
+  Platform,
 } from 'react-native';
 
+import {captureRef} from 'react-native-view-shot';
+import CameraRoll from '@react-native-community/cameraroll';
+
 const App = () => {
+  // create a ref
+  const viewRef = useRef();
+
+  // get permission on android
+  const getPermissionAndroid = async () => {
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+        {
+          title: 'Image Download Permission',
+          message: 'Your permission is required to save images to your device',
+          buttonNegative: 'Cancel',
+          buttonPositive: 'OK',
+        },
+      );
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        return true;
+      }
+      Alert.alert(
+        '',
+        'Your permission is required to save images to your device',
+        [{text: 'OK', onPress: () => {}}],
+        {cancelable: false},
+      );
+    } catch (err) {
+      // handle error as you please
+      console.log('err', err);
+    }
+  };
+
+  // download image
+  const downloadImage = async () => {
+    try {
+      // react-native-view-shot caputures component
+      const uri = await captureRef(viewRef, {
+        format: 'png',
+        quality: 0.8,
+      });
+
+      if (Platform.OS === 'android') {
+        const granted = await getPermissionAndroid();
+        if (!granted) {
+          return;
+        }
+      }
+
+      // cameraroll saves image
+      const image = CameraRoll.save(uri, 'photo');
+      if (image) {
+        Alert.alert(
+          '',
+          'Image saved successfully.',
+          [{text: 'OK', onPress: () => {}}],
+          {cancelable: false},
+        );
+      }
+    } catch (error) {
+      console.log('error', error);
+    }
+  };
+
   return (
     <>
       <StatusBar barStyle="dark-content" />
@@ -19,7 +86,7 @@ const App = () => {
           contentInsetAdjustmentBehavior="automatic"
           style={styles.scrollView}>
           <View style={styles.body}>
-            <View style={styles.savedComponent}>
+            <View style={styles.savedComponent} ref={viewRef}>
               <Text style={styles.text}> Component to be saved </Text>
               <Image
                 source={{
@@ -35,7 +102,7 @@ const App = () => {
               <TouchableOpacity style={styles.button}>
                 <Text>Share</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.button}>
+              <TouchableOpacity style={styles.button} onPress={downloadImage}>
                 <Text>Save</Text>
               </TouchableOpacity>
             </View>
